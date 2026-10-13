@@ -273,16 +273,18 @@ function bx(w,h,d,c,hang){
   const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:c}));m.castShadow=true;
   m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g),EDGE));return m;
 }
-/* NOTE: these looks are my approximation. Send the model pictures and I match them exactly. */
+/* looks matched to Core's sprite sheets */
 const CHARS=[
-  {id:'yuji',name:'Itadori Yuji',scale:1.02,skin:'#f1c8a0',hair:'#e58aa3',cloth:'#1d2046',pants:'#15172e',trim:'#d7263d',style:'yuji',hood:true,bf:.3,kit:['flash','divergent','manji',null]},
-  {id:'gojo',name:'Gojo Satoru',scale:1.1,skin:'#f3d5bd',hair:'#f2f4ff',cloth:'#1a1f3a',pants:'#14172c',trim:'#1a1f3a',style:'gojo',blind:true,eye:'#9fd8ff',bf:.12,kit:['blue','red','limitless','void']},
-  {id:'sukuna',name:'Ryomen Sukuna',scale:1.04,skin:'#f1c8a0',hair:'#e58aa3',cloth:'#14111a',pants:'#0e0c14',trim:'#e8e2d6',style:'yuji',marks:true,kimono:true,bf:.12,kit:['dismantle','cleave','fuga','shrine']}
+  {id:'yuji',name:'Itadori Yuji',scale:1.02,skin:'#f0c39a',hair:'#dd7f8e',cloth:'#1a1c3a',pants:'#14162c',trim:'#c8202f',style:'yuji',scarf:'#c8202f',cuff:'#c8202f',sleeveTrim:'#c8202f',shoe:'#7a1620',eye:'#b9772e',bf:.3,kit:['flash','divergent','manji',null]},
+  {id:'gojo',name:'Gojo Satoru',scale:1.1,skin:'#f3d5bd',hair:'#e6e1fa',cloth:'#17151f',pants:'#121019',trim:'#17151f',style:'gojo',blind:true,shoe:'#0b0a10',eye:'#9fd8ff',bf:.12,kit:['blue','red','limitless','void']},
+  {id:'sukuna',name:'Ryomen Sukuna',scale:1.04,skin:'#efc096',hair:'#ea8fa0',cloth:'#e9e6df',pants:'#e4e1da',trim:'#17131d',style:'yuji',marks:true,kimono:true,wide:true,scarf:'#17131d',sash:'#17131d',sleeveTrim:'#17131d',tattoo:true,fore:true,shoe:'#1a1520',eye:'#c2202f',bf:.12,kit:['dismantle','cleave','fuga','shrine']}
 ];function makeArm(def,side){
   const sh=new THREE.Group();sh.position.set(side*.33,1.34,0);
   sh.add(bx(.15,.32,.15,def.cloth,true));
+  if(def.sleeveTrim){const st=bx(.16,.045,.16,def.sleeveTrim);st.position.y=-.27;sh.add(st)}
   const el=new THREE.Group();el.position.y=-.32;sh.add(el);
-  el.add(bx(.14,.28,.14,def.cloth,true));
+  el.add(bx(.14,.28,.14,def.fore?def.skin:def.cloth,true));
+  if(def.tattoo){for(let i=0;i<2;i++){const t=bx(.15,.03,.15,'#1a1218');t.position.y=-.09-i*.09;el.add(t)}}
   const hand=bx(.12,.12,.12,def.skin,true);hand.position.y=-.28;el.add(hand);
   const glow=new THREE.Mesh(new THREE.SphereGeometry(.22,16,12),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
   glow.position.y=-.06;hand.add(glow);
@@ -292,19 +294,26 @@ function spike(head,def,x,y,z,w,h,d,rx,rz){const s=bx(w,h,d,def.hair);s.position
 function buildChar(def){
   const root=new THREE.Group(),body=new THREE.Group();root.add(body);body.scale.setScalar(def.scale);
   const rig={root,body,def,eyes:[]};
-  const leg=(x)=>{const l=new THREE.Group();l.position.set(x,.82,0);l.add(bx(.2,.82,.24,def.pants,true));
-    const s=bx(.21,.1,.3,'#0b0b12');s.position.set(0,-.78,.03);l.add(s);body.add(l);return l};
-  rig.legL=leg(.13);rig.legR=leg(-.13);
+  const lw=def.wide?.27:.2,ld=def.wide?.3:.24;
+  const leg=(x)=>{const l=new THREE.Group();l.position.set(x,.82,0);l.add(bx(lw,.82,ld,def.pants,true));
+    if(def.cuff){const cf=bx(lw+.01,.08,ld+.01,def.cuff);cf.position.y=-.68;l.add(cf)}
+    const s=bx(lw+.01,.1,.3,def.shoe||'#0b0b12');s.position.set(0,-.78,.03);l.add(s);body.add(l);return l};
+  rig.legL=leg(.14);rig.legR=leg(-.14);
   const torso=bx(.5,.58,.28,def.cloth);torso.position.y=1.11;body.add(torso);
-  if(def.hood){const h=bx(.5,.16,.16,def.trim);h.position.set(0,1.36,-.17);body.add(h)}
-  if(def.kimono){const k=bx(.58,.5,.34,def.cloth);k.position.y=.62;body.add(k);const c=bx(.2,.22,.02,def.trim);c.position.set(0,1.25,.15);body.add(c)}
-  if(def.style==='gojo'){const c=bx(.46,.12,.31,def.cloth);c.position.y=1.4;body.add(c)}
+  if(def.scarf){const r=bx(.42,.13,.36,def.scarf);r.position.set(0,1.4,0);body.add(r);
+    const fl=bx(.42,.3,.1,def.scarf);fl.position.set(0,1.26,-.17);body.add(fl);
+    for(const sx of[-1,1]){const fr=bx(.1,.22,.04,def.scarf);fr.position.set(sx*.1,1.27,.19);fr.rotation.z=sx*.35;body.add(fr)}}
+  if(def.kimono){const k=bx(.58,.5,.34,def.cloth);k.position.y=.62;body.add(k);const c=bx(.14,.26,.02,def.trim);c.position.set(0,1.24,.15);body.add(c)}
+  if(def.sash){const sa=bx(.54,.1,.32,def.sash);sa.position.y=.92;body.add(sa);const tl=bx(.1,.44,.03,def.sash);tl.position.set(.07,.64,.2);body.add(tl)}
+  if(def.style==='gojo'){const c=bx(.46,.17,.31,def.cloth);c.position.y=1.41;body.add(c)}
   if(def.style==='megumi'){for(let i=0;i<3;i++){const b=bx(.04,.04,.02,def.trim);b.position.set(0,1.0+i*.16,.15);body.add(b)}}
   const head=new THREE.Group();head.position.y=1.4;body.add(head);rig.head=head;
   const f=bx(.3,.32,.3,def.skin);f.position.y=.16;head.add(f);
   for(const ex of[-.075,.075]){const e=new THREE.Mesh(new THREE.BoxGeometry(.06,.045,.01),new THREE.MeshLambertMaterial({color:def.eye||'#0b0b14'}));e.position.set(ex,.19,.152);head.add(e);rig.eyes.push(e.material)}
   if(def.blind){const b=bx(.32,.09,.32,'#0b0b12');b.position.set(0,.19,0);head.add(b);rig.blind=b}
-  if(def.marks){for(const ex of[-.075,.075]){const m=bx(.05,.012,.006,'#1a1218');m.position.set(ex,.13,.153);head.add(m)}const m2=bx(.04,.1,.006,'#1a1218');m2.position.set(0,.22,.153);head.add(m2)}
+  if(def.marks){for(const ex of[-.075,.075]){const m=bx(.05,.012,.006,'#1a1218');m.position.set(ex,.13,.153);head.add(m)}const m2=bx(.04,.1,.006,'#1a1218');m2.position.set(0,.22,.153);head.add(m2);
+    for(const ex of[-.075,.075]){const m=bx(.05,.012,.006,'#1a1218');m.position.set(ex,.105,.153);head.add(m)}
+    for(const ex of[-.1,.1]){const m=bx(.03,.05,.006,'#1a1218');m.position.set(ex,.27,.153);head.add(m)}}
   const cap=bx(.34,.1,.34,def.hair);cap.position.y=.35;head.add(cap);
   const back=bx(.34,.22,.06,def.hair);back.position.set(0,.22,-.15);head.add(back);
   if(def.style==='yuji'){
@@ -819,7 +828,7 @@ function tgtPose(sw){
       case'manji':o.rs0=-.4;o.re=-.3;o.ls0=-.4;o.le=-.3;o.lean=.35;break;
       case'blue':case'red':o.rs0=-1.45;o.rs1=.05;o.re=-.1;o.ls0=-.3;o.ls1=-.3;o.le=-.7;o.gR=1;o.col=sk.id==='blue'?'#3a8bff':'#ff3a3a';break;
       case'limitless':o.rs0=-1.2;o.rs1=.3;o.re=-.4;o.ls0=-1.2;o.ls1=-.3;o.le=-.4;o.gR=1;o.gL=1;o.col='#9fd8ff';break;
-      case'void':o.rs0=-.9;o.rs1=.55;o.re=-1.5;o.ls0=-.9;o.ls1=-.55;o.le=-1.5;o.gR=1;o.gL=1;o.col='#bfa8ff';o.lean=.04;break;
+      case'void':o.rs0=-.5;o.rs1=.2;o.re=-2.3;o.ls0=.15;o.ls1=-.1;o.le=-.2;o.gR=1;o.gL=0;o.col='#bfa8ff';o.lean=.04;break;
       case'dismantle':o.rs0=-1.5;o.rs1=lerp(1.1,-1.0,clamp(t/.35,0,1));o.re=-.1;o.ls0=-.4;o.ls1=-.3;o.le=-1.2;o.gR=1;o.col='#ffffff';break;
       case'cleave':if(t<.25){o.rs0=-2.8;o.re=-.1}else{o.rs0=-1.0;o.re=-.1;o.lean=.2}o.ls0=-.4;o.le=-1;o.gR=1;o.col='#ffffff';break;
       case'fuga':o.rs0=-1.4;o.rs1=.1;o.re=-.1;o.ls0=-1.2;o.ls1=-.2;o.le=-.6;o.gR=1;o.gL=1;o.col='#ff8a30';break;
@@ -831,7 +840,9 @@ function tgtPose(sw){
     else if(R){o.rs0=.6-2.1*ex;o.re=-.2;o.ls0=-.3;o.ls1=-.25;o.le=-1.3}
     else{o.ls0=.6-2.1*ex;o.le=-.2;o.rs0=-.3;o.rs1=.25;o.re=-1.3}
     o.lean=.2*ex;return o}
-  o.rs0=-sw*.7;o.ls0=sw*.7;o.re=P.moving?-.25:0;o.le=P.moving?-.25:0;o.lean=P.moving?.08:0;
+  if(G.redT>0){o.rs0=.5;o.rs1=.55;o.re=-.5;o.ls0=.5;o.ls1=-.55;o.le=-.5;o.lean=-.3;return o}
+  o.rs0=-sw*.7;o.ls0=sw*.7;o.re=P.moving?-.25:-.2;o.le=P.moving?-.25:-.2;o.lean=P.moving?.08:0;
+  if(!P.moving){o.rs0=-.12;o.ls0=-.12}
   if(view===2){o.rs0=-.75-sw*.08;o.rs1=.12;o.re=-.9;o.ls0=-.75+sw*.08;o.ls1=-.12;o.le=-.9}
   return o}
 function animChar(dt){
@@ -844,7 +855,8 @@ function animChar(dt){
   const now=performance.now(),gs=[[rig.armR,T.gR,1],[rig.armL,T.gL,1],[fp.R,T.gR,.5],[fp.L,T.gL,.5]];
   for(const[a,g,f]of gs){const m=a.glow.material,tg=g?(.8+.2*Math.sin(now/80))*f:0;m.opacity+=(tg-m.opacity)*Math.min(1,dt*20);m.color.set(T.col);a.glow.scale.setScalar(1+.2*Math.sin(now/60))}
   if(rig.blind){const on=!!sk&&['void','limitless','blue','red'].includes(sk.id);rig.blind.position.y=on?.36:.19;rig.eyes.forEach(m=>m.emissive.setHex(on?0x66ccff:0))}
-  if(rig.def.id==='sukuna'){const on=!!sk;rig.eyes.forEach(m=>m.color.set(on?'#ff2a44':'#0b0b14'))}}
+  rig.head.rotation.x+=((G.redT>0?-.4:0)-rig.head.rotation.x)*Math.min(1,dt*20);
+  if(rig.def.id==='sukuna'){const on=!!sk;rig.eyes.forEach(m=>m.color.set(on?'#ff2a44':'#c2202f'))}}
 
 /* ===== screen effects (2D overlay) ===== */
 function proj(v){const p=v.clone().project(camera);return[(p.x+1)/2*W,(1-p.y)/2*H,p.z<1]}
